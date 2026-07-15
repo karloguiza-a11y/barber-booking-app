@@ -1,0 +1,281 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== USER MODELS =====
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  client    Client?
+  barber    Barber?
+  admin     Admin?
+
+  @@index([email])
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  firstName String
+  lastName  String
+  phone     String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservations  Reservation[]
+  referenceImages ReferenceImage[]
+
+  @@index([userId])
+  @@index([email])
+}
+
+model Barber {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  firstName String
+  lastName  String
+  email     String   @unique
+  phone     String
+  photo     String?
+  specialty String
+  bio       String?
+  rating    Float    @default(5.0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedules     BarberSchedule[]
+  reservations  Reservation[]
+  services      BarberService[]
+
+  @@index([userId])
+  @@index([email])
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  firstName String
+  lastName  String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ===== SERVICE MODELS =====
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  duration    Int      // minutes
+  price       Float
+  image       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  reservations   Reservation[]
+  barberServices BarberService[]
+
+  @@index([name])
+}
+
+model BarberService {
+  id        String   @id @default(cuid())
+  barberId  String
+  serviceId String
+  price     Float?   // Override price if different from default
+  createdAt DateTime @default(now())
+
+  // Relations
+  barber  Barber  @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([barberId, serviceId])
+  @@index([barberId])
+  @@index([serviceId])
+}
+
+// ===== SCHEDULE MODELS =====
+
+model BarberSchedule {
+  id        String   @id @default(cuid())
+  barberId  String
+  dayOfWeek Int      // 0-6 (Monday-Sunday)
+  startTime String   // HH:MM format
+  endTime   String   // HH:MM format
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([barberId])
+}
+
+model Unavailability {
+  id        String   @id @default(cuid())
+  barberId  String
+  date      DateTime
+  startTime String   // HH:MM format
+  endTime   String   // HH:MM format
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([barberId])
+}
+
+// ===== RESERVATION MODELS =====
+
+model Reservation {
+  id              String   @id @default(cuid())
+  clientId        String
+  barberId        String
+  serviceId       String
+  appointmentDate DateTime
+  startTime       String   // HH:MM format
+  endTime         String   // HH:MM format
+  status          ReservationStatus @default(PENDING)
+  notes           String?
+  totalPrice      Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  client           Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  barber           Barber           @relation(fields: [barberId], references: [id], onDelete: Restrict)
+  service          Service          @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  referenceImages  ReferenceImage[]
+  notifications    Notification[]
+  payments         Payment[]
+
+  @@index([clientId])
+  @@index([barberId])
+  @@index([serviceId])
+  @@index([appointmentDate])
+  @@index([status])
+}
+
+model ReferenceImage {
+  id            String   @id @default(cuid())
+  reservationId String?
+  clientId      String
+  imageUrl      String
+  publicId      String   // Cloudinary public ID
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  client      Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([clientId])
+}
+
+// ===== NOTIFICATION MODELS =====
+
+model Notification {
+  id            String   @id @default(cuid())
+  reservationId String
+  type          NotificationType
+  email         String
+  subject       String
+  message       String
+  status        NotificationStatus @default(PENDING)
+  sentAt        DateTime?
+  error         String?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([status])
+}
+
+// ===== PAYMENT MODELS =====
+
+model Payment {
+  id            String   @id @default(cuid())
+  reservationId String
+  amount        Float
+  currency      String   @default("USD")
+  status        PaymentStatus @default(PENDING)
+  paymentMethod String?
+  transactionId String?   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([status])
+}
+
+// ===== ENUMS =====
+
+enum UserRole {
+  CLIENT
+  BARBER
+  ADMIN
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum NotificationType {
+  RESERVATION_CREATED
+  RESERVATION_CONFIRMED
+  RESERVATION_CANCELLED
+  RESERVATION_REMINDER
+  RESERVATION_COMPLETED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
