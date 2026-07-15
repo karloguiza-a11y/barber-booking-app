@@ -1,15 +1,17 @@
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = {
-  title: 'Reservar Cita - Barber Shop',
-  description: 'Reserva tu cita con nosotros',
-}
+import { Navbar } from '@/components/Navbar'
+import { BookingForm } from '@/components/BookingForm'
+import { Footer } from '@/components/Footer'
 
 export default function BookingPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Reservar Cita</h1>
-      {/* Booking form will be added here */}
-    </div>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-primary py-12">
+        <div className="max-w-4xl mx-auto px-4">
+          <BookingForm />
+        </div>
+      </div>
+      <Footer />
+    </>
   )
 }
