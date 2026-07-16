@@ -1,70 +1,47 @@
-import { useAuth, User } from '../hooks/useAuth'
-import { Barber } from '../hooks/useBarbers'
+﻿import { useNavigate } from 'react-router-dom'
+import { BarberCard } from '../components/BarberCard'
+import { useBarbers } from '../hooks/useBarbers'
 
-interface HomePageProps {
-  user: User | null
-  barbers: Barber[]
-  barbersLoading: boolean
-  getBarberRating: (barberId: string) => number
-}
-
-export default function HomePage({ user, barbers, barbersLoading, getBarberRating }: HomePageProps) {
-  const { logout } = useAuth()
-
-  const handleLogout = async () => {
-    await logout()
-  }
+export default function HomePage() {
+  const navigate = useNavigate()
+  const { barbers, loading, error } = useBarbers()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-primary to-dark-secondary p-8">
-      <header className="mb-12 flex justify-between items-center">
-        <h1 className="text-5xl font-bebas text-accent">Barber Booking</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-white">Bienvenido, {user?.user_metadata?.full_name || user?.email}</span>
-          <button
-            onClick={handleLogout}
-            className="bg-accent text-dark-primary px-4 py-2 rounded font-bold hover:bg-opacity-80"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
+    <div className="min-h-screen bg-dark-primary">
+      <header className="bg-dark-secondary border-b border-dark-tertiary px-6 py-4 flex justify-between items-center">
+        <h1 className="text-4xl font-bebas text-accent tracking-wide">Barber Booking</h1>
+        <button
+          onClick={() => navigate('/admin/login')}
+          className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
+        >
+          Admin
+        </button>
       </header>
 
-      <main>
-        <h2 className="text-3xl font-bebas text-white mb-8">Nuestros Barberos</h2>
-        
-        {barbersLoading ? (
-          <div className="text-center text-white text-xl">Cargando barberos...</div>
-        ) : barbers.length === 0 ? (
-          <div className="text-center text-white text-xl">No hay barberos disponibles</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {barbers.map((barber) => (
-              <div key={barber.id} className="bg-dark-secondary rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-                {barber.image_url && (
-                  <img
-                    src={barber.image_url}
-                    alt={barber.name}
-                    className="w-full h-48 object-cover"
-                  />
-                )}
-                <div className="p-6">
-                  <h3 className="text-2xl font-bebas text-accent mb-2">{barber.name}</h3>
-                  <p className="text-gray-400 text-sm mb-3">{barber.specialty}</p>
-                  <p className="text-white mb-3">{barber.bio}</p>
-                  
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-accent font-bold">
-                      ⭐ {getBarberRating(barber.id)}/5
-                    </span>
-                    <span className="text-gray-400">{barber.phone}</span>
-                  </div>
+      <main className="max-w-5xl mx-auto px-4 py-10">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bebas text-white mb-2">Elige a tu barbero</h2>
+          <p className="text-gray-400">Selecciona al estilista que prefieras y reserva tu cita al instante.</p>
+        </div>
 
-                  <button className="w-full bg-accent text-dark-primary font-bold py-2 rounded hover:bg-opacity-80">
-                    Reservar
-                  </button>
-                </div>
-              </div>
+        {loading && (
+          <div className="flex justify-center items-center h-48">
+            <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {error && (
+          <p className="text-center text-red-400 py-8">Error al cargar barberos: {error}</p>
+        )}
+
+        {!loading && !error && barbers.length === 0 && (
+          <p className="text-center text-gray-500 py-16 text-lg">No hay barberos disponibles por el momento.</p>
+        )}
+
+        {!loading && !error && barbers.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {barbers.map((barber) => (
+              <BarberCard key={barber.id} barber={barber} onBook={(id) => navigate(`/booking/${id}`)} />
             ))}
           </div>
         )}
