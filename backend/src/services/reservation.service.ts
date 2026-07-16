@@ -3,6 +3,7 @@ import { NotFound, BadRequest } from '../utils/errors.js';
 import { CreateReservationInput, UpdateReservationInput } from '../schemas/reservation.js';
 import { isTimeSlotAvailable, addMinutesToTime } from '../utils/helpers.js';
 import { NotificationService } from './notification.service.js';
+import PaymentService from './payment.service.js';
 
 const prisma = new PrismaClient();
 
@@ -110,14 +111,36 @@ export class ReservationService {
   }
 
   async cancelReservation(id: string) {
-    const reservation = await this.updateReservation(id, {
+    const reservation = await prisma.reservation.findUnique({
+      where: { id },
+      include: { payments: true },
+    });
+
+    if (!reservation) {
+      throw new NotFound('Reservation not found');
+    }
+
+    const updated = await this.updateReservation(id, {
       status: ReservationStatus.CANCELLED,
     });
 
-    // Send cancellation email
-    await this.notificationService.sendCancellationNotification(reservation);
+    // Handle payment refund if payment exists and is completed
+    if (reservation.payments && reservation.payments.length > 0) {
+      const completedPayment = reservation.payments.find((p) => p.status === 'COMPLETED');
+      if (completedPayment) {
+        try {
+          await PaymentService.refundPayment(completedPayment.id, 'reservation_cancelled');
+        } catch (error) {
+          console.error('Failed to refund payment on cancellation:', error);
+          // Don't throw - the cancellation should succeed even if refund fails
+        }
+      }
+    }
 
-    return reservation;
+    // Send cancellation email
+    await this.notificationService.sendCancellationNotification(updated);
+
+    return updated;
   }
 
   async getClientReservations(clientId: string) {

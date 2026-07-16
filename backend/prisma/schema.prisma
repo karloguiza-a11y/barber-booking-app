@@ -226,21 +226,39 @@ model Notification {
 // ===== PAYMENT MODELS =====
 
 model Payment {
-  id            String   @id @default(cuid())
-  reservationId String
-  amount        Float
-  currency      String   @default("USD")
-  status        PaymentStatus @default(PENDING)
-  paymentMethod String?
-  transactionId String?   @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  reservationId           String
+  amount                  Float    // In cents (100 = $1.00)
+  currency                String   @default("USD")
+  status                  PaymentStatus @default(PENDING)
+  provider                String   // "stripe" or "paypal"
+  
+  // Stripe fields
+  stripePaymentIntentId   String?  @unique
+  stripeClientSecret      String?
+  
+  // PayPal fields
+  paypalOrderId           String?  @unique
+  
+  // Legacy/alternative fields
+  paymentMethod           String?
+  transactionId           String?  @unique
+  
+  // Metadata and error handling
+  metadata                Json?
+  errorMessage            String?
+  
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   // Relations
-  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservation             Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
 
   @@index([reservationId])
   @@index([status])
+  @@index([provider])
+  @@index([stripePaymentIntentId])
+  @@index([paypalOrderId])
 }
 
 // ===== ENUMS =====

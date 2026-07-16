@@ -163,6 +163,49 @@ const options = {
             },
           },
         },
+        Payment: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            reservationId: {
+              type: 'string',
+              format: 'uuid',
+            },
+            amount: {
+              type: 'number',
+              description: 'Amount in cents (100 = $1.00)',
+            },
+            currency: {
+              type: 'string',
+              enum: ['USD', 'EUR', 'GBP', 'CAD', 'MXN'],
+            },
+            status: {
+              type: 'string',
+              enum: ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED'],
+            },
+            provider: {
+              type: 'string',
+              enum: ['stripe', 'paypal'],
+            },
+            stripePaymentIntentId: {
+              type: 'string',
+            },
+            paypalOrderId: {
+              type: 'string',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
       },
     },
   },

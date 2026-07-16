@@ -14,6 +14,7 @@ import reservationRoutes from './routes/reservation.routes.js';
 import serviceRoutes from './routes/service.routes.js';
 import barberRoutes from './routes/barber.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 
 const app: Express = express();
 const prisma = new PrismaClient();
@@ -46,6 +47,7 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/barbers', barberRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
