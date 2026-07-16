@@ -3,107 +3,91 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { registerSchema, RegisterFormData } from '@/lib/schemas/auth'
-import { useRegister } from '@/hooks/useAuth'
+import { loginSchema, LoginFormData } from '@/lib/schemas/auth'
+import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+  const { signup, loading, error } = useAuth()
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
   })
-  const { mutate: registerMutation, isPending } = useRegister()
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [name, setName] = useState('')
 
-  const onSubmit = (data: RegisterFormData) => {
-    registerMutation(data, {
-      onSuccess: () => {
-        router.push('/booking')
-      },
-    })
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      await signup(data.email, data.password, name)
+      router.push('/dashboard')
+    } catch (err) {
+      console.error('Signup error:', err)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-primary to-dark-secondary flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-dark-secondary rounded-lg shadow-2xl p-8 border border-accent/20"
-      >
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+        {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-accent rounded-full mx-auto mb-4 flex items-center justify-center">
-            <span className="text-2xl text-dark-primary">✂️</span>
-          </div>
-          <h1 className="font-bebas text-3xl text-accent mb-2">CREAR CUENTA</h1>
-          <p className="text-gray-400">Únete a nuestra comunidad</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            ✂️ Barber Booking
+          </h1>
+          <p className="text-gray-600">Crear tu cuenta</p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* First Name */}
           <div>
-            <label className="block text-sm font-semibold text-white mb-2">Nombre</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre Completo
+            </label>
             <input
               type="text"
-              {...register('firstName')}
-              className="w-full px-4 py-2 bg-dark-tertiary border border-dark-tertiary focus:border-accent rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
-              placeholder="Tu nombre"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              placeholder="Juan Pérez"
             />
-            {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>}
           </div>
 
-          {/* Last Name */}
           <div>
-            <label className="block text-sm font-semibold text-white mb-2">Apellido</label>
-            <input
-              type="text"
-              {...register('lastName')}
-              className="w-full px-4 py-2 bg-dark-tertiary border border-dark-tertiary focus:border-accent rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
-              placeholder="Tu apellido"
-            />
-            {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
             <input
               type="email"
               {...register('email')}
-              className="w-full px-4 py-2 bg-dark-tertiary border border-dark-tertiary focus:border-accent rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               placeholder="tu@email.com"
             />
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
           </div>
 
-          {/* Phone */}
           <div>
-            <label className="block text-sm font-semibold text-white mb-2">Teléfono</label>
-            <input
-              type="tel"
-              {...register('phone')}
-              className="w-full px-4 py-2 bg-dark-tertiary border border-dark-tertiary focus:border-accent rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
-              placeholder="+1 (555) 123-4567"
-            />
-            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">Contraseña</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contraseña
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 {...register('password')}
-                className="w-full px-4 py-2 bg-dark-tertiary border border-dark-tertiary focus:border-accent rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 placeholder="Mínimo 8 caracteres"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2.5 text-gray-400 hover:text-white"
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
               >
                 {showPassword ? '👁️' : '👁️‍🗨️'}
               </button>
@@ -111,44 +95,28 @@ export default function RegisterPage() {
             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
           </div>
 
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">Confirmar Contraseña</label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                {...register('confirmPassword')}
-                className="w-full px-4 py-2 bg-dark-tertiary border border-dark-tertiary focus:border-accent rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
-                placeholder="Repite tu contraseña"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-2.5 text-gray-400 hover:text-white"
-              >
-                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-              </button>
-            </div>
-            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>}
-          </div>
-
-          {/* Submit Button */}
           <button
             type="submit"
-            disabled={isPending}
-            className="w-full mt-6 bg-accent text-dark-primary font-bold py-3 rounded-lg hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg transition duration-200"
           >
-            {isPending ? 'Creando cuenta...' : 'Crear Cuenta'}
+            {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
           </button>
         </form>
 
-        <p className="text-center text-gray-400 mt-6">
+        <p className="text-center text-gray-600 mt-6">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/auth/login" className="text-accent font-semibold hover:text-yellow-600 transition">
+          <Link href="/auth/login" className="text-blue-600 font-semibold hover:text-blue-700">
             Inicia sesión
           </Link>
         </p>
-      </motion.div>
+
+        <div className="mt-6 text-center">
+          <Link href="/" className="text-blue-600 hover:text-blue-700 text-sm">
+            ← Volver al inicio
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
