@@ -1,9 +1,11 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import { config } from './config/env.js';
 import { globalLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { swaggerSpec } from './config/swagger.js';
 import { PrismaClient } from '@prisma/client';
 
 // Routes
@@ -25,6 +27,13 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(globalLimiter);
+
+// Swagger Documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api/docs.json', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
