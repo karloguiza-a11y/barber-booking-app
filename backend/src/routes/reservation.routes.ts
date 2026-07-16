@@ -19,7 +19,7 @@ router.use(authMiddleware);
  *     tags:
  *       - Reservations
  *     summary: Create new reservation
- *     description: Book a new appointment at the barbershop
+ *     description: Book a new appointment at the barbershop. An SMS confirmation will be automatically sent to the client if SMS is enabled.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -52,7 +52,7 @@ router.use(authMiddleware);
  *                 type: string
  *     responses:
  *       201:
- *         description: Reservation created successfully
+ *         description: Reservation created successfully. SMS confirmation sent (if enabled).
  *         content:
  *           application/json:
  *             schema:
@@ -67,6 +67,9 @@ router.use(authMiddleware);
  *                       type: string
  *                     status:
  *                       type: string
+ *                     smsNotification:
+ *                       type: string
+ *                       example: "SMS confirmation sent to client phone number"
  *       400:
  *         description: Invalid input or time slot unavailable
  */
@@ -184,7 +187,7 @@ router.patch('/:id', updateReservation);
  *     tags:
  *       - Reservations
  *     summary: Cancel reservation
- *     description: Cancel an existing reservation
+ *     description: Cancel an existing reservation. An SMS cancellation notice will be automatically sent to the client if SMS is enabled.
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -196,7 +199,24 @@ router.patch('/:id', updateReservation);
  *         description: Reservation ID
  *     responses:
  *       200:
- *         description: Reservation cancelled successfully
+ *         description: Reservation cancelled successfully. SMS cancellation notification sent (if enabled).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                     smsNotification:
+ *                       type: string
+ *                       example: "SMS cancellation notice sent to client phone number"
  *       404:
  *         description: Reservation not found
  */
