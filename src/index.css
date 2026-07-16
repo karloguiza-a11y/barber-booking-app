@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+}
+
+html {
+  @apply scroll-smooth;
+}
+
+body {
+  @apply font-inter text-gray-900;
+}
+
+* {
+  @apply transition-colors duration-200;
+}
+
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-secondary;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-accent rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-opacity-80;
+}
