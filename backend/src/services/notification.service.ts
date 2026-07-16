@@ -46,6 +46,25 @@ export class NotificationService {
     });
   }
 
+  async sendCompletionNotification(reservation: Reservation & { client: any; barber?: any }) {
+    const subject = 'Tu cita fue completada - Deja una reseña';
+    const message = `
+      <h2>¡Tu cita fue completada!</h2>
+      <p>Esperamos que hayas tenido una excelente experiencia con ${reservation.barber?.firstName || 'tu barbero'}.</p>
+      <p>Por favor, ayúdanos dejando una reseña. Tu opinión es muy importante para nosotros y ayuda a otros clientes a encontrar los mejores servicios.</p>
+      <p><a href="${config.server.frontendUrl}/reservations/${reservation.id}/review">Dejar una Reseña</a></p>
+      <p>¡Gracias!</p>
+    `;
+
+    return this.createNotification({
+      reservationId: reservation.id,
+      type: NotificationType.RESERVATION_COMPLETED,
+      email: reservation.client.email,
+      subject,
+      message,
+    });
+  }
+
   private async createNotification(data: {
     reservationId: string;
     type: NotificationType;

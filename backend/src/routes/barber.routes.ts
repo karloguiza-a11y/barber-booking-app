@@ -6,6 +6,7 @@ import {
   updateBarber,
   deleteBarber,
 } from '../controllers/barber.controller.js';
+import { getBarberRating, getServiceRating } from '../controllers/review.controller.js';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
 import { UserRole } from '@prisma/client';
 
@@ -183,5 +184,46 @@ router.patch('/:id', authMiddleware, requireRole([UserRole.ADMIN]), updateBarber
  *         description: Barber not found
  */
 router.delete('/:id', authMiddleware, requireRole([UserRole.ADMIN]), deleteBarber);
+
+/**
+ * @swagger
+ * /api/barbers/{barberId}/rating:
+ *   get:
+ *     tags:
+ *       - Ratings
+ *     summary: Get barber rating
+ *     description: Get average rating and distribution for a barber
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: barberId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Barber ID
+ *     responses:
+ *       200:
+ *         description: Rating retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     barberId:
+ *                       type: string
+ *                     average:
+ *                       type: number
+ *                     total:
+ *                       type: integer
+ *                     distribution:
+ *                       type: object
+ */
+router.get('/:barberId/rating', authMiddleware, getBarberRating);
 
 export default router;

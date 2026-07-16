@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { createBarberSchema, updateBarberSchema } from '../schemas/barber.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { NotFound } from '../utils/errors.js';
+import ReviewService from '../services/review.service.js';
 
 const prisma = new PrismaClient();
 
@@ -15,9 +16,28 @@ export const getBarbersWithServices = asyncHandler(
         services: {
           include: { service: true },
         },
+        reviews: {
+          where: { isDeleted: false },
+          select: { id: true },
+        },
       },
     });
-    res.json({ success: true, data: result });
+
+    // Enriquecer con datos de ratings
+    const enrichedResult = await Promise.all(
+      result.map(async (barber) => {
+        const ratingData = await ReviewService.calculateBarberRating(barber.id);
+        return {
+          ...barber,
+          reviewCount: barber.reviews.length,
+          averageRating: ratingData.average,
+          ratingDistribution: ratingData.distribution,
+          reviews: undefined, // Remover el array de reviews completo
+        };
+      })
+    );
+
+    res.json({ success: true, data: enrichedResult });
   }
 );
 
@@ -31,6 +51,10 @@ export const getBarber = asyncHandler(
           include: { service: true },
         },
         schedules: true,
+        reviews: {
+          where: { isDeleted: false },
+          select: { id: true },
+        },
       },
     });
 
@@ -38,7 +62,17 @@ export const getBarber = asyncHandler(
       throw new NotFound('Barber not found');
     }
 
-    res.json({ success: true, data: result });
+    // Enriquecer con datos de ratings
+    const ratingData = await ReviewService.calculateBarberRating(id);
+    const enrichedResult = {
+      ...result,
+      reviewCount: result.reviews.length,
+      averageRating: ratingData.average,
+      ratingDistribution: ratingData.distribution,
+      reviews: undefined, // Remover el array de reviews completo
+    };
+
+    res.json({ success: true, data: enrichedResult });
   }
 );
 

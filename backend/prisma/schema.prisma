@@ -42,6 +42,7 @@ model Client {
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   reservations  Reservation[]
   referenceImages ReferenceImage[]
+  reviews       Review[]
 
   @@index([userId])
   @@index([email])
@@ -67,6 +68,7 @@ model Barber {
   schedules     BarberSchedule[]
   reservations  Reservation[]
   services      BarberService[]
+  reviews       Review[]
 
   @@index([userId])
   @@index([email])
@@ -177,6 +179,7 @@ model Reservation {
   referenceImages  ReferenceImage[]
   notifications    Notification[]
   payments         Payment[]
+  review           Review?
 
   @@index([clientId])
   @@index([barberId])
@@ -259,6 +262,43 @@ model Payment {
   @@index([provider])
   @@index([stripePaymentIntentId])
   @@index([paypalOrderId])
+}
+
+// ===== REVIEW MODELS =====
+
+model Review {
+  id              String   @id @default(cuid())
+  
+  reservation     Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservationId   String   @unique
+  
+  barber          Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  barberId        String
+  
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId        String
+  
+  rating          Int      // 1-5 stars
+  title           String?
+  comment         String?  @db.Text
+  
+  images          String[] // URLs de imágenes
+  
+  helpful         Int      @default(0)
+  unhelpful       Int      @default(0)
+  
+  isVerified      Boolean  @default(false) // Verificado que hizo la reserva
+  isDeleted       Boolean  @default(false) // Soft delete
+  reportReason    String?  // Razón del reporte si fue marcado como inapropiado
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([reservationId])
+  @@index([barberId])
+  @@index([clientId])
+  @@index([isDeleted])
+  @@index([reportReason])
 }
 
 // ===== ENUMS =====

@@ -172,4 +172,43 @@ export class ReservationService {
       orderBy: { appointmentDate: 'asc' },
     });
   }
+
+  async completeReservation(id: string) {
+    const reservation = await prisma.reservation.findUnique({
+      where: { id },
+    });
+
+    if (!reservation) {
+      throw new NotFound('Reservation not found');
+    }
+
+    if (reservation.status === ReservationStatus.COMPLETED) {
+      throw new BadRequest('Reservation is already completed');
+    }
+
+    const updated = await this.updateReservation(id, {
+      status: ReservationStatus.COMPLETED,
+    });
+
+    // Send completion notification
+    await this.notificationService.sendCompletionNotification(updated);
+
+    return updated;
+  }
+
+  async markNoShow(id: string) {
+    const reservation = await prisma.reservation.findUnique({
+      where: { id },
+    });
+
+    if (!reservation) {
+      throw new NotFound('Reservation not found');
+    }
+
+    const updated = await this.updateReservation(id, {
+      status: ReservationStatus.NO_SHOW,
+    });
+
+    return updated;
+  }
 }
