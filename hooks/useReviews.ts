@@ -51,27 +51,35 @@ export function useReviews(barberId?: string): UseReviewsReturn {
 
     fetchReviews()
 
-    // Subscribe to changes
-    const subscription = supabase
-      .from('reviews')
-      .on('*', (payload) => {
-        setReviews((prev) => {
-          if (payload.eventType === 'DELETE') {
-            return prev.filter((r) => r.id !== payload.old.id)
-          }
-          if (payload.eventType === 'INSERT') {
-            return [payload.new as Review, ...prev]
-          }
-          if (payload.eventType === 'UPDATE') {
-            return prev.map((r) => (r.id === payload.new.id ? (payload.new as Review) : r))
-          }
-          return prev
-        })
-      })
+    // Subscribe to changes using new API
+    const channel = supabase
+      .channel('reviews')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reviews',
+        },
+        (payload: any) => {
+          setReviews((prev) => {
+            if (payload.eventType === 'DELETE') {
+              return prev.filter((r) => r.id !== payload.old.id)
+            }
+            if (payload.eventType === 'INSERT') {
+              return [payload.new as Review, ...prev]
+            }
+            if (payload.eventType === 'UPDATE') {
+              return prev.map((r) => (r.id === payload.new.id ? (payload.new as Review) : r))
+            }
+            return prev
+          })
+        }
+      )
       .subscribe()
 
     return () => {
-      subscription.unsubscribe()
+      channel.unsubscribe()
     }
   }, [barberId])
 

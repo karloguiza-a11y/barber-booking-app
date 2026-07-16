@@ -46,27 +46,32 @@ export function useBarbers(): UseBarBersReturn {
 
     fetchBarbers()
 
-    // Subscribe to realtime changes
-    const subscription = supabase
-      .from('barbers')
-      .on('*', (payload) => {
-        setBarbers((prev) => {
+    // Subscribe to realtime changes using new API
+    const channel = supabase
+      .channel('barbers')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'barbers',
+        },
+        (payload: any) => {
           if (payload.eventType === 'DELETE') {
-            return prev.filter((b) => b.id !== payload.old.id)
+            setBarbers((prev) => prev.filter((b) => b.id !== payload.old.id))
+          } else if (payload.eventType === 'INSERT') {
+            setBarbers((prev) => [...prev, payload.new as Barber])
+          } else if (payload.eventType === 'UPDATE') {
+            setBarbers((prev) =>
+              prev.map((b) => (b.id === payload.new.id ? (payload.new as Barber) : b))
+            )
           }
-          if (payload.eventType === 'INSERT') {
-            return [...prev, payload.new as Barber]
-          }
-          if (payload.eventType === 'UPDATE') {
-            return prev.map((b) => (b.id === payload.new.id ? (payload.new as Barber) : b))
-          }
-          return prev
-        })
-      })
+        }
+      )
       .subscribe()
 
     return () => {
-      subscription.unsubscribe()
+      channel.unsubscribe()
     }
   }, [])
 

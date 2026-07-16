@@ -1,0 +1,60 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Generate static export
+        run: |
+          echo "Build completed successfully"
+          ls -la .next/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: .next/
+          retention-days: 30
+
+      - name: Commit build to repo
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .next/ || true
+          git commit -m "chore: update build artifacts" || true
+          git push || true
+        continue-on-error: true
+
+      - name: Create deployment package
+        run: |
+          zip -r barber-booking-app.zip . -x "node_modules/*" ".git/*" ".next/cache/*"
+          ls -lh barber-booking-app.zip
+
+      - name: Upload as release asset
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: barber-booking-app.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
